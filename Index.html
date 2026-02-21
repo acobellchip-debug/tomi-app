@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>トミ式・初級韓国語1秒暗記トレーニング</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #e74c3c;
+            --success-color: #27ae60;
+            --bg-color: #ecf0f1;
+            --card-bg: #ffffff;
+            --text-main: #34495e;
+            --text-sub: #7f8c8d;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* Navigation Bar */
+        .nav-bar {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 100;
+        }
+
+        .btn-back {
+            background: rgba(44, 62, 80, 0.1);
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            padding: 5px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: none;
+            /* Hidden by default */
+            transition: background 0.2s;
+        }
+
+        .btn-back:hover {
+            background: rgba(44, 62, 80, 0.2);
+        }
+
+        /* Screens */
+        .screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            min-height: 400px;
+            transition: opacity 0.3s ease;
+            position: relative;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* Typography */
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            color: var(--primary-color);
+        }
+
+        h2 {
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-sub);
+        }
+
+        .korean-word {
+            font-size: 5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+            line-height: 1.2;
+        }
+
+        .japanese-word {
+            font-size: 2rem;
+            color: var(--text-sub);
+            margin-bottom: 2rem;
+            min-height: 2.4rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .japanese-word.visible {
+            opacity: 1;
+        }
+
+        /* Buttons */
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.1s, background-color 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin: 10px;
+            min-width: 200px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-large {
+            font-size: 1.3rem;
+            padding: 20px 40px;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            width: 100%;
+            max-width: 300px;
+            margin-bottom: 15px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            flex: 1;
+        }
+
+        .btn-retry {
+            background-color: var(--accent-color);
+            flex: 1;
+        }
+
+        /* Group List Style */
+        .group-list {
+            display: grid;
+            gap: 10px;
+            width: 100%;
+            max-height: 60vh;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .group-item {
+            background: #f8f9fa;
+            border: 2px solid #bdc3c7;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .group-item:hover {
+            transform: translateX(5px);
+            border-color: var(--accent-color);
+            background: #fff;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background-color: #eee;
+            border-radius: 3px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--accent-color);
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        /* Result Screen */
+        .result-stats {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+
+        .confetti {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Practice Mode Specific */
+        .practice-guide {
+            font-size: 1.5rem;
+            color: var(--accent-color);
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 15px;
+            border: 2px dashed var(--accent-color);
+            border-radius: 10px;
+            background-color: #fdf2f0;
+        }
+
+        /* Pause & Overlay */
+        .pause-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 15px;
+            z-index: 50;
+        }
+
+        .pause-overlay.visible {
+            display: flex;
+        }
+
+        .pause-text {
+            color: white;
+            font-size: 3rem;
+            font-weight: bold;
+            letter-spacing: 5px;
+        }
+
+        .btn-pause {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--text-sub);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 60;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <!-- Navigation Button (visible on all screens except Top) -->
+        <div class="nav-bar">
+            <button id="back-btn" class="btn-back" onclick="app.goBack()">← 戻る</button>
+        </div>
+
+        <!-- 1. Top Screen (Group List) -->
+        <div id="top-screen" class="screen active">
+            <h1>単語帳グループ選択</h1>
+            <p style="margin-bottom: 20px; color: #7f8c8d;">学習するグループを選んでください</p>
+            <div id="group-list" class="group-list">
+                <!-- Groups will be injected here -->
+            </div>
+        </div>
+
+        <!-- 2. Group Detail Screen -->
+        <div id="group-detail-screen" class="screen">
+            <h1 id="group-title">グループ詳細</h1>
+            <p style="margin-bottom: 30px; color: #7f8c8d;">モードを選択してください</p>
+
+            <button class="btn btn-large" onclick="app.startPractice()">
+                📖 事前準備 (5回音読)
+            </button>
+            <button class="btn btn-large" style="background: linear-gradient(135deg, #e74c3c, #c0392b);"
+                onclick="app.startTest()">
+                ⏱️ 1秒テスト (想起)
+            </button>
+        </div>
+
+        <!-- 3. Practice Screen -->
+        <div id="practice-screen" class="screen">
+            <h2>音読練習モード</h2>
+            <div id="practice-counter"
+                style="font-size: 1rem; font-weight: bold; color: var(--text-sub); margin-bottom: 10px;">1 / 40</div>
+            <div id="practice-word" class="korean-word"></div>
+            <div id="practice-meaning" class="japanese-word visible" style="opacity: 1; color: var(--text-main);"></div>
+
+            <div class="practice-guide">
+                🗣️ コレを5回 音読して！
+            </div>
+
+            <div class="btn-group" style="margin-top: 20px;">
+                <button class="btn" id="practice-prev-btn" onclick="app.handlePracticePrev()"
+                    style="background: #95a5a6; padding: 15px 30px; font-size: 1.1rem;">⬅ 前へ</button>
+                <button class="btn" onclick="app.handlePracticeNext()"
+                    style="background: linear-gradient(135deg, #3498db, #2980b9); padding: 15px 30px; font-size: 1.1rem;">次へ
+                    ➡</button>
+            </div>
+
+            <div style="margin-top: 12px; font-size: 0.75rem; color: #bbb;">
+                ← → キーまたは Enter で操作
+            </div>
+        </div>
+
+        <!-- 4. Training (Test) Screen -->
+        <div id="training-screen" class="screen">
+            <button class="btn-pause" onclick="app.togglePause()">⏸️ 一時停止</button>
+            <div id="pause-overlay" class="pause-overlay">
+                <div class="pause-text">PAUSE</div>
+                <p style="color: #ddd; margin-top: 10px;">SPACEキーで再開</p>
+            </div>
+
+            <h2>1秒テストモード</h2>
+            <div class="progress-container">
+                <div id="timer-bar" class="progress-bar"></div>
+            </div>
+
+            <div id="word-display" class="korean-word"></div>
+            <div id="meaning-display" class="japanese-word"></div>
+
+            <div class="btn-group">
+                <button class="btn btn-retry" onclick="app.handleAnswer(false)">もう一度</button>
+                <button class="btn btn-success" onclick="app.handleAnswer(true)">わかった</button>
+            </div>
+            <div style="margin-top: 15px; font-size: 0.8rem; color: #ccc;">
+                残り: <span id="remaining-count">0</span> 単語
+            </div>
+        </div>
+
+        <!-- 5. Result Screen -->
+        <div id="result-screen" class="screen">
+            <div class="confetti">🎉</div>
+            <h1>完了！</h1>
+            <div class="result-stats">
+                このグループの学習が終わりました。<br>
+                お疲れ様でした。
+            </div>
+            <button class="btn btn-large" onclick="app.showGroupDetail()">グループ詳細へ戻る</button>
+        </div>
+    </div>
+
+    <script src="data.js"></script>
+    <script>
+
+        class FlashcardApp {
+            constructor() {
+                this.currentGroup = null;
+                this.words = [];
+                this.practiceWords = [];
+                this.practiceIndex = 0;
+                this.currentWord = null;
+                this._practiceKeyHandler = null;
+                this.timer = null;
+                this.isAutoPlay = true; // Default for Test Mode
+                this.speechSynth = window.speechSynthesis;
+
+                // Elements
+                this.backBtn = document.getElementById('back-btn');
+                this.groupList = document.getElementById('group-list');
+                this.groupTitle = document.getElementById('group-title');
+
+                // Test Elements
+
+                // Test Elements
+                this.wordDisplay = document.getElementById('word-display');
+                this.meaningDisplay = document.getElementById('meaning-display');
+                this.timerBar = document.getElementById('timer-bar');
+                this.countDisplay = document.getElementById('remaining-count');
+                this.pauseOverlay = document.getElementById('pause-overlay');
+                this.pauseBtn = document.querySelector('.btn-pause');
+
+                // State
+                this.isPaused = false;
+                this.testPhase = 'thinking'; // 'thinking' | 'reviewing'
+
+                // Practice Elements
+                this.practiceWord = document.getElementById('practice-word');
+                this.practiceMeaning = document.getElementById('practice-meaning');
+                this.practiceCounter = document.getElementById('practice-counter');
+                this.practicePrevBtn = document.getElementById('practice-prev-btn');
+                this.practiceCount = document.getElementById('practice-remaining');
+
+                this.initTopPage();
+            }
+
+            // --- Navigation Logic ---
+
+            initTopPage() {
+                this.groupList.innerHTML = '';
+                groupsData.forEach((group, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'group-item';
+                    div.innerText = group.name;
+                    div.onclick = () => this.selectGroup(index);
+                    this.groupList.appendChild(div);
+                });
+                this.showScreen('top');
+            }
+
+            selectGroup(index) {
+                this.currentGroup = groupsData[index];
+                this.groupTitle.innerText = this.currentGroup.name;
+                this.showGroupDetail();
+            }
+
+            showGroupDetail() {
+                // Return to detail from anywhere
+                this.showScreen('group-detail');
+            }
+
+            goBack() {
+                // Handle "Back" logic based on current screen
+                const activeScreen = document.querySelector('.screen.active').id;
+
+                if (activeScreen === 'group-detail-screen') {
+                    this.showScreen('top');
+                } else if (activeScreen === 'practice-screen' || activeScreen === 'training-screen' || activeScreen === 'result-screen') {
+                    // Stop any timers/audio
+                    if (this.timer) clearTimeout(this.timer);
+                    this.speechSynth.cancel();
+                    this._detachPracticeKeys();
+                    this.showGroupDetail();
+                }
+            }
+
+            showScreen(screenName) {
+                document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+                document.getElementById(`${screenName}-screen`).classList.add('active');
+
+                // Toggle Back Button visibility
+                if (screenName === 'top') {
+                    this.backBtn.style.display = 'none';
+                } else {
+                    this.backBtn.style.display = 'block';
+                }
+            }
+
+            // --- Practice Mode (Preparation) ---
+
+            startPractice() {
+                this.practiceWords = [...this.currentGroup.words]; // Copy
+                this.practiceIndex = 0;
+                this.showScreen('practice');
+                this.showPracticeWord();
+                this._attachPracticeKeys();
+            }
+
+            showPracticeWord() {
+                const word = this.practiceWords[this.practiceIndex];
+                const total = this.practiceWords.length;
+
+                this.practiceWord.innerText = word.ko;
+                this.practiceMeaning.innerText = word.ja;
+                this.practiceCounter.innerText = `${this.practiceIndex + 1} / ${total}`;
+
+                // Disable prev button on first word
+                this.practicePrevBtn.disabled = this.practiceIndex === 0;
+                this.practicePrevBtn.style.opacity = this.practiceIndex === 0 ? '0.4' : '1';
+
+                this.speak(word.ko);
+            }
+
+            handlePracticeNext() {
+                if (this.practiceIndex < this.practiceWords.length - 1) {
+                    this.practiceIndex++;
+                    this.showPracticeWord();
+                } else {
+                    this._detachPracticeKeys();
+                    this.showScreen('result');
+                }
+            }
+
+            handlePracticePrev() {
+                if (this.practiceIndex > 0) {
+                    this.practiceIndex--;
+                    this.showPracticeWord();
+                }
+            }
+
+            _attachPracticeKeys() {
+                this._detachPracticeKeys();
+                this._practiceKeyHandler = (e) => {
+                    if (e.key === 'ArrowRight' || e.key === 'Enter') {
+                        e.preventDefault();
+                        this.handlePracticeNext();
+                    } else if (e.key === 'ArrowLeft') {
+                        e.preventDefault();
+                        this.handlePracticePrev();
+                    }
+                };
+                document.addEventListener('keydown', this._practiceKeyHandler);
+            }
+
+            _detachPracticeKeys() {
+                if (this._practiceKeyHandler) {
+                    document.removeEventListener('keydown', this._practiceKeyHandler);
+                    this._practiceKeyHandler = null;
+                }
+            }
+
+            // --- Test Mode (Training) ---
+
+            startTest() {
+                // Initialize Word List (Deep copy)
+                this.words = JSON.parse(JSON.stringify(this.currentGroup.words));
+                this.words = this.shuffle(this.words);
+
+                this.showScreen('training');
+                this.nextCard();
+            }
+
+            nextCard() {
+                if (this.words.length === 0) {
+                    this.showScreen('result');
+                    return;
+                }
+
+                this.currentWord = this.words[0];
+                this.countDisplay.innerText = this.words.length;
+
+                // Update UI
+                this.wordDisplay.innerText = this.currentWord.ko;
+                this.meaningDisplay.innerText = this.currentWord.ja;
+                this.meaningDisplay.classList.remove('visible');
+                this.timerBar.style.width = '100%';
+
+                this.timerBar.style.transition = 'none';
+                void this.timerBar.offsetWidth; // Trigger reflow
+
+                this.speak(this.currentWord.ko);
+
+                // Auto Timer Logic (Always on for Test Mode)
+                this.startAutoTimer();
+            }
+
+            startAutoTimer() {
+                // Animate Timer Bar for 1s
+                this.timerBar.style.transition = 'width 1s linear';
+                this.timerBar.style.width = '0%';
+
+                this.testPhase = 'thinking';
+
+                // After 1s, show meaning
+                this.timer = setTimeout(() => {
+                    this.meaningDisplay.classList.add('visible');
+                    this.testPhase = 'reviewing';
+
+                    // Wait 1.5s then auto-advance (cycle if not answered)
+                    // If user clicks "Known" or "Retry" before this, timer is cleared.
+                    this.timer = setTimeout(() => {
+                        this.words.push(this.words.shift());
+                        this.nextCard();
+                    }, 1500);
+
+                }, 1000);
+            }
+
+            handleAnswer(isKnown) {
+                if (this.isPaused) return;
+
+                if (this.timer) clearTimeout(this.timer);
+
+                if (isKnown) {
+                    this.words.shift();
+                } else {
+                    this.words.push(this.words.shift());
+                }
+                this.nextCard();
+            }
+
+            // --- Pause / Resume ---
+
+            togglePause() {
+                if (this.isPaused) {
+                    this.resumeTest();
+                } else {
+                    this.pauseTest();
+                }
+            }
+
+            pauseTest() {
+                this.isPaused = true;
+                if (this.timer) clearTimeout(this.timer);
+                this.speechSynth.cancel();
+
+                // Stop visual timer (freeze)
+                const computedWidth = window.getComputedStyle(this.timerBar).width;
+                this.timerBar.style.transition = 'none';
+                this.timerBar.style.width = computedWidth;
+
+                this.pauseOverlay.classList.add('visible');
+                this.pauseBtn.innerText = '▶️ 再開';
+            }
+
+            resumeTest() {
+                this.isPaused = false;
+                this.pauseOverlay.classList.remove('visible');
+                this.pauseBtn.innerText = '⏸️ 一時停止';
+
+                if (this.testPhase === 'thinking') {
+                    // Replay Logic:
+                    // Reset Transition first
+                    this.timerBar.style.transition = 'none';
+                    this.timerBar.style.width = '100%';
+                    void this.timerBar.offsetWidth; // Reflow
+
+                    // Speak again
+                    this.speak(this.currentWord.ko);
+
+                    // Restart thinking timer
+                    this.startAutoTimer();
+                } else {
+                    // If reviewing, just wait remaining time (approx) or full review time?
+                    // Simpler to just wait 1.5s review time from now.
+                    this.timer = setTimeout(() => {
+                        this.words.push(this.words.shift());
+                        this.nextCard();
+                    }, 1500);
+                }
+            }
+
+            // --- Utilities ---
+
+            speak(text) {
+                this.speechSynth.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'ko-KR';
+                utterance.rate = 1.0;
+                this.speechSynth.speak(utterance);
+            }
+
+            shuffle(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+        }
+
+        const app = new FlashcardApp();
+
+        // Keyboard Shortcut (Spacebar)
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                const activeScreen = document.querySelector('.screen.active');
+                if (activeScreen && activeScreen.id === 'training-screen') {
+                    e.preventDefault(); // Prevent scrolling
+                    app.togglePause();
+                }
+            }
+        });
+
+        // Preload voices
+        window.speechSynthesis.getVoices();
+    </script>
+</body>
+
+</html>
