@@ -103,6 +103,7 @@
             margin-bottom: 1rem;
             color: var(--primary-color);
             line-height: 1.2;
+            cursor: pointer;
         }
 
         .japanese-word {
@@ -312,7 +313,7 @@
         </div>
 
         <!-- 3. Practice Screen -->
-        <div id="practice-screen" class="screen">
+        <div id="practice-screen" class="screen" onclick="app.speakCurrentWord()">
             <h2>音読練習モード</h2>
             <div id="practice-counter"
                 style="font-size: 1rem; font-weight: bold; color: var(--text-sub); margin-bottom: 10px;">1 / 40</div>
@@ -415,6 +416,16 @@
                 this.practiceCount = document.getElementById('practice-remaining');
 
                 this.initTopPage();
+            }
+
+            // --- Audio Logic ---
+            speakCurrentWord() {
+                if (this.currentGroup && this.practiceWords[this.practiceIndex]) {
+                    const activeScreen = document.querySelector('.screen.active').id;
+                    if (activeScreen === 'practice-screen') {
+                        this.speak(this.practiceWords[this.practiceIndex].ko);
+                    }
+                }
             }
 
             // --- Navigation Logic ---
@@ -520,6 +531,9 @@
                     } else if (e.key === 'ArrowLeft') {
                         e.preventDefault();
                         this.handlePracticePrev();
+                    } else if (e.key.toLowerCase() === 's' || e.code === 'Space') {
+                        e.preventDefault();
+                        this.speakCurrentWord();
                     }
                 };
                 document.addEventListener('keydown', this._practiceKeyHandler);
