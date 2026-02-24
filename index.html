@@ -382,9 +382,9 @@
             </div>
 
             <div class="btn-group" style="margin-top: 20px;">
-                <button class="btn" id="practice-prev-btn" onclick="app.handlePracticePrev()"
+                <button class="btn" id="practice-prev-btn" onclick="app.handlePracticePrev(event)"
                     style="background: #95a5a6; padding: 15px 30px; font-size: 1.1rem;">⬅ 前へ</button>
-                <button class="btn" onclick="app.handlePracticeNext()"
+                <button class="btn" onclick="app.handlePracticeNext(event)"
                     style="background: linear-gradient(135deg, #3498db, #2980b9); padding: 15px 30px; font-size: 1.1rem;">次へ
                     ➡</button>
             </div>
@@ -571,7 +571,8 @@
                 this.speak(word.ko);
             }
 
-            handlePracticeNext() {
+            handlePracticeNext(event) {
+                if (event) event.stopPropagation();
                 if (this.practiceIndex < this.practiceWords.length - 1) {
                     this.practiceIndex++;
                     this.showPracticeWord();
@@ -581,7 +582,8 @@
                 }
             }
 
-            handlePracticePrev() {
+            handlePracticePrev(event) {
+                if (event) event.stopPropagation();
                 if (this.practiceIndex > 0) {
                     this.practiceIndex--;
                     this.showPracticeWord();
@@ -669,6 +671,10 @@
 
             handleAnswer(isKnown) {
                 if (this.isPaused) return;
+
+                // Stop audio before moving to next word in test mode
+                this.speechSynth.cancel();
+
                 if (this.testPhase === 'thinking' && !isKnown) return; // Prevent early "Retry" if useful? Or just allow it.
 
                 if (this.timer) clearTimeout(this.timer);
