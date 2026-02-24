@@ -278,6 +278,56 @@
             z-index: 60;
             font-size: 0.9rem;
         }
+
+        /* Test Mode Enhancements */
+        .settings-item {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            color: var(--text-main);
+        }
+
+        .tap-zones {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            pointer-events: none;
+            z-index: 40;
+        }
+
+        .tap-zone {
+            flex: 1;
+            pointer-events: auto;
+            cursor: pointer;
+        }
+
+        /* Visual Wait state */
+        .screen.waiting .btn-group .btn {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1.05);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1.05);
+            }
+        }
     </style>
 </head>
 
@@ -310,6 +360,13 @@
                 onclick="app.startTest()">
                 ⏱️ 1秒テスト (想起)
             </button>
+
+            <div class="settings-item">
+                <label for="test-duration" style="font-weight: bold;">意味が出るまでの時間: <span
+                        id="duration-value">1.0</span>秒</label>
+                <input type="range" id="test-duration" min="0.5" max="3.0" step="0.1" value="1.0"
+                    oninput="document.getElementById('duration-value').innerText = this.value">
+            </div>
         </div>
 
         <!-- 3. Practice Screen -->
@@ -339,6 +396,10 @@
 
         <!-- 4. Training (Test) Screen -->
         <div id="training-screen" class="screen">
+            <div class="tap-zones">
+                <div class="tap-zone" onclick="app.handleAnswer(false)"></div>
+                <div class="tap-zone" onclick="app.handleAnswer(true)"></div>
+            </div>
             <button class="btn-pause" onclick="app.togglePause()">⏸️ 一時停止</button>
             <div id="pause-overlay" class="pause-overlay">
                 <div class="pause-text">PAUSE</div>
@@ -385,8 +446,10 @@
                 this.practiceIndex = 0;
                 this.currentWord = null;
                 this._practiceKeyHandler = null;
+                this._testKeyHandler = null;
                 this.timer = null;
-                this.isAutoPlay = true; // Default for Test Mode
+                this.testDuration = 1000; // ms
+                this.isAutoPlay = true;
                 this.speechSynth = window.speechSynthesis;
 
                 // Elements
@@ -414,6 +477,8 @@
                 this.practiceCounter = document.getElementById('practice-counter');
                 this.practicePrevBtn = document.getElementById('practice-prev-btn');
                 this.practiceCount = document.getElementById('practice-remaining');
+                this.trainingScreen = document.getElementById('training-screen');
+                this.durationSlider = document.getElementById('test-duration');
 
                 this.initTopPage();
             }
@@ -464,6 +529,7 @@
                     if (this.timer) clearTimeout(this.timer);
                     this.speechSynth.cancel();
                     this._detachPracticeKeys();
+                    this._detachTestKeys();
                     this.showGroupDetail();
                 }
             }
@@ -553,7 +619,11 @@
                 this.words = JSON.parse(JSON.stringify(this.currentGroup.words));
                 this.words = this.shuffle(this.words);
 
+                // Set duration from slider
+                this.testDuration = parseFloat(this.durationSlider.value) * 1000;
+
                 this.showScreen('training');
+                this._attachTestKeys();
                 this.nextCard();
             }
 
@@ -582,29 +652,24 @@
             }
 
             startAutoTimer() {
-                // Animate Timer Bar for 1s
-                this.timerBar.style.transition = 'width 1s linear';
+                // Animate Timer Bar
+                this.timerBar.style.transition = `width ${this.testDuration}ms linear`;
                 this.timerBar.style.width = '0%';
 
                 this.testPhase = 'thinking';
+                this.trainingScreen.classList.remove('waiting');
 
-                // After 1s, show meaning
+                // After duration, show meaning and WAIT
                 this.timer = setTimeout(() => {
                     this.meaningDisplay.classList.add('visible');
                     this.testPhase = 'reviewing';
-
-                    // Wait 1.5s then auto-advance (cycle if not answered)
-                    // If user clicks "Known" or "Retry" before this, timer is cleared.
-                    this.timer = setTimeout(() => {
-                        this.words.push(this.words.shift());
-                        this.nextCard();
-                    }, 1500);
-
-                }, 1000);
+                    this.trainingScreen.classList.add('waiting');
+                }, this.testDuration);
             }
 
             handleAnswer(isKnown) {
                 if (this.isPaused) return;
+                if (this.testPhase === 'thinking' && !isKnown) return; // Prevent early "Retry" if useful? Or just allow it.
 
                 if (this.timer) clearTimeout(this.timer);
 
@@ -614,6 +679,30 @@
                     this.words.push(this.words.shift());
                 }
                 this.nextCard();
+            }
+
+            _attachTestKeys() {
+                this._detachTestKeys();
+                this._testKeyHandler = (e) => {
+                    const activeScreen = document.querySelector('.screen.active').id;
+                    if (activeScreen !== 'training-screen') return;
+
+                    if (e.key === 'ArrowRight') {
+                        e.preventDefault();
+                        this.handleAnswer(true);
+                    } else if (e.key === 'ArrowLeft') {
+                        e.preventDefault();
+                        this.handleAnswer(false);
+                    }
+                };
+                document.addEventListener('keydown', this._testKeyHandler);
+            }
+
+            _detachTestKeys() {
+                if (this._testKeyHandler) {
+                    document.removeEventListener('keydown', this._testKeyHandler);
+                    this._testKeyHandler = null;
+                }
             }
 
             // --- Pause / Resume ---
@@ -658,12 +747,8 @@
                     // Restart thinking timer
                     this.startAutoTimer();
                 } else {
-                    // If reviewing, just wait remaining time (approx) or full review time?
-                    // Simpler to just wait 1.5s review time from now.
-                    this.timer = setTimeout(() => {
-                        this.words.push(this.words.shift());
-                        this.nextCard();
-                    }, 1500);
+                    // In reviewing/waiting phase, just stay paused. 
+                    // No need to set a timer since it's manual advancement now.
                 }
             }
 
