@@ -279,6 +279,56 @@
             font-size: 0.9rem;
         }
 
+        /* Listening Mode Specific */
+        .btn-pause-large {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            font-size: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+            margin: 30px auto;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+
+        .btn-pause-large:active {
+            transform: scale(0.95);
+        }
+
+        .listening-group-name {
+            font-size: 1rem;
+            color: var(--text-sub);
+            margin-bottom: 20px;
+            background: #f1f3f5;
+            padding: 5px 15px;
+            border-radius: 20px;
+        }
+
+        .control-btns {
+            display: flex;
+            gap: 15px;
+            width: 100%;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .btn-control {
+            background: #95a5a6;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-size: 1rem;
+            cursor: pointer;
+            min-width: 100px;
+        }
+
         /* Test Mode Enhancements */
         .settings-item {
             margin: 20px 0;
@@ -356,10 +406,21 @@
             <button class="btn btn-large" onclick="app.startPractice()">
                 📖 事前準備 (5回音読)
             </button>
+            <button class="btn btn-large" style="background: linear-gradient(135deg, #27ae60, #219150);"
+                onclick="app.startListening()">
+                🎧 聞き流し (自動ループ)
+            </button>
             <button class="btn btn-large" style="background: linear-gradient(135deg, #e74c3c, #c0392b);"
                 onclick="app.startTest()">
                 ⏱️ 1秒テスト (想起)
             </button>
+
+            <div class="settings-item">
+                <label for="listening-interval" style="font-weight: bold;">単語間のインターバル: <span
+                        id="interval-value">2.0</span>秒</label>
+                <input type="range" id="listening-interval" min="0.5" max="5.0" step="0.5" value="2.0"
+                    oninput="document.getElementById('interval-value').innerText = parseFloat(this.value).toFixed(1)">
+            </div>
 
             <div class="settings-item">
                 <label for="test-duration" style="font-weight: bold;">意味が出るまでの時間: <span
@@ -423,7 +484,31 @@
             </div>
         </div>
 
-        <!-- 5. Result Screen -->
+        <!-- 5. Listening Mode Screen -->
+        <div id="listening-screen" class="screen">
+            <div id="listening-group-display" class="listening-group-name"></div>
+            <div id="listening-counter" style="font-size: 0.9rem; color: var(--text-sub); margin-bottom: 10px;">1 / 40
+            </div>
+
+            <div id="listening-korean" class="korean-word" style="font-size: 3.5rem;"></div>
+            <div id="listening-japanese" class="japanese-word visible"
+                style="font-size: 1.5rem; color: var(--text-main); margin-top: 10px;"></div>
+
+            <button id="listening-play-pause" class="btn-pause-large" onclick="app.toggleListeningPause()">
+                ⏸️
+            </button>
+
+            <div class="control-btns">
+                <button class="btn-control" onclick="app.handleListeningPrev()">⏮ 前へ</button>
+                <button class="btn-control" onclick="app.handleListeningNext()">次へ ⏭</button>
+            </div>
+
+            <div style="margin-top: 20px; font-size: 0.8rem; color: #7f8c8d;">
+                画面を閉じていても音声を再生します
+            </div>
+        </div>
+
+        <!-- 6. Result Screen -->
         <div id="result-screen" class="screen">
             <div class="confetti">🎉</div>
             <h1>完了！</h1>
@@ -471,14 +556,22 @@
                 this.isPaused = false;
                 this.testPhase = 'thinking'; // 'thinking' | 'reviewing'
 
-                // Practice Elements
-                this.practiceWord = document.getElementById('practice-word');
-                this.practiceMeaning = document.getElementById('practice-meaning');
-                this.practiceCounter = document.getElementById('practice-counter');
-                this.practicePrevBtn = document.getElementById('practice-prev-btn');
-                this.practiceCount = document.getElementById('practice-remaining');
-                this.trainingScreen = document.getElementById('training-screen');
                 this.durationSlider = document.getElementById('test-duration');
+
+                // Listening Elements
+                this.listeningScreen = document.getElementById('listening-screen');
+                this.listeningGroupDisplay = document.getElementById('listening-group-display');
+                this.listeningCounter = document.getElementById('listening-counter');
+                this.listeningKorean = document.getElementById('listening-korean');
+                this.listeningJapanese = document.getElementById('listening-japanese');
+                this.listeningPlayPauseBtn = document.getElementById('listening-play-pause');
+                this.listeningIntervalSlider = document.getElementById('listening-interval');
+
+                // Listening State
+                this.listeningWords = [];
+                this.listeningIndex = 0;
+                this.isListeningPaused = false;
+                this.listeningTimeout = null;
 
                 this.initTopPage();
             }
@@ -524,9 +617,10 @@
 
                 if (activeScreen === 'group-detail-screen') {
                     this.showScreen('top');
-                } else if (activeScreen === 'practice-screen' || activeScreen === 'training-screen' || activeScreen === 'result-screen') {
+                } else if (activeScreen === 'practice-screen' || activeScreen === 'training-screen' || activeScreen === 'listening-screen' || activeScreen === 'result-screen') {
                     // Stop any timers/audio
                     if (this.timer) clearTimeout(this.timer);
+                    if (this.listeningTimeout) clearTimeout(this.listeningTimeout);
                     this.speechSynth.cancel();
                     this._detachPracticeKeys();
                     this._detachTestKeys();
@@ -758,13 +852,97 @@
                 }
             }
 
+            // --- Listening Mode (Automatic loop) ---
+
+            startListening() {
+                this.listeningWords = [...this.currentGroup.words];
+                this.listeningIndex = 0;
+                this.isListeningPaused = false;
+                this.listeningPlayPauseBtn.innerText = '⏸️';
+                this.listeningGroupDisplay.innerText = this.currentGroup.name;
+
+                this.showScreen('listening');
+                this.playListeningStep();
+            }
+
+            playListeningStep() {
+                if (this.listeningIndex >= this.listeningWords.length) {
+                    this.showScreen('result');
+                    return;
+                }
+
+                if (this.isListeningPaused) return;
+
+                const word = this.listeningWords[this.listeningIndex];
+                const total = this.listeningWords.length;
+                this.listeningCounter.innerText = `${this.listeningIndex + 1} / ${total}`;
+
+                // Phase 1: Show Korean & Play Korean
+                this.listeningKorean.innerText = word.ko;
+                this.listeningJapanese.innerText = '';
+
+                this.speak(word.ko, 'ko-KR', () => {
+                    if (this.isListeningPaused) return;
+
+                    // Phase 2: Wait a bit, then Show Japanese & Play Japanese
+                    this.listeningTimeout = setTimeout(() => {
+                        this.listeningJapanese.innerText = word.ja;
+                        this.speak(word.ja, 'ja-JP', () => {
+                            if (this.isListeningPaused) return;
+
+                            // Phase 3: Wait interval, then Next
+                            const interval = parseFloat(this.listeningIntervalSlider.value) * 1000;
+                            this.listeningTimeout = setTimeout(() => {
+                                this.listeningIndex++;
+                                this.playListeningStep();
+                            }, interval);
+                        });
+                    }, 800); // 0.8s gap between KO and JA
+                });
+            }
+
+            toggleListeningPause() {
+                this.isListeningPaused = !this.isListeningPaused;
+                this.listeningPlayPauseBtn.innerText = this.isListeningPaused ? '▶️' : '⏸️';
+
+                if (this.isListeningPaused) {
+                    if (this.listeningTimeout) clearTimeout(this.listeningTimeout);
+                    this.speechSynth.cancel();
+                } else {
+                    this.playListeningStep();
+                }
+            }
+
+            handleListeningNext() {
+                if (this.listeningTimeout) clearTimeout(this.listeningTimeout);
+                this.speechSynth.cancel();
+                this.listeningIndex++;
+                this.isListeningPaused = false;
+                this.listeningPlayPauseBtn.innerText = '⏸️';
+                this.playListeningStep();
+            }
+
+            handleListeningPrev() {
+                if (this.listeningTimeout) clearTimeout(this.listeningTimeout);
+                this.speechSynth.cancel();
+                if (this.listeningIndex > 0) {
+                    this.listeningIndex--;
+                }
+                this.isListeningPaused = false;
+                this.listeningPlayPauseBtn.innerText = '⏸️';
+                this.playListeningStep();
+            }
+
             // --- Utilities ---
 
-            speak(text) {
+            speak(text, lang = 'ko-KR', onEnd = null) {
                 this.speechSynth.cancel();
                 const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'ko-KR';
+                utterance.lang = lang;
                 utterance.rate = 1.0;
+                if (onEnd) {
+                    utterance.onend = onEnd;
+                }
                 this.speechSynth.speak(utterance);
             }
 
