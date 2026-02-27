@@ -3,7 +3,9 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>トミ式・初級韓国語1秒暗記トレーニング</title>
     <style>
         :root {
@@ -606,11 +608,23 @@
                 this.silentAudio.style.display = 'none'; // Keep it hidden but in DOM
 
                 // 5 seconds of silence (Low bit rate MP3)
-                this.silentAudio.src = 'data:audio/mpeg;base64,SUQzBAAAAAABAFRYWFgAAAASAAADbWFqb3JfYnJhbmQAZGFzaABUWFhYAAAAEAAAA21pbm9yX3ZlcnNpb24AMABUWFhYAAAAHAAAA2NvbXBhdGlibGVfYnJhbmRzAGlzbzZtcDQxAFRTU0UAAAAPAAADTGF2ZjYwLjMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';
-                this.silentAudio.volume = 0.01; // Not 0, to prevent iOS power saving
+                const silentB64 = 'SUQzBAAAAAABAFRYWFgAAAASAAADbWFqb3JfYnJhbmQAZGFzaABUWFhYAAAAEAAAA21pbm9yX3ZlcnNpb24AMABUWFhYAAAAHAAAA2NvbXBhdGlibGVfYnJhbmRzAGlzbzZtcDQxAFRTU0UAAAAPAAADTGF2ZjYwLjMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';
+                const audioBlob = this.base64ToBlob(silentB64, 'audio/mpeg');
+                this.silentAudio.src = URL.createObjectURL(audioBlob);
+                this.silentAudio.volume = 0.05;
                 this.silentAudio.muted = false;
 
                 this.initTopPage();
+            }
+
+            base64ToBlob(base64, contentType) {
+                const raw = window.atob(base64);
+                const rawLength = raw.length;
+                const uInt8Array = new Uint8Array(rawLength);
+                for (let i = 0; i < rawLength; ++i) {
+                    uInt8Array[i] = raw.charCodeAt(i);
+                }
+                return new Blob([uInt8Array], { type: contentType });
             }
 
             log(msg) {
@@ -953,23 +967,37 @@
                 this.listeningGroupDisplay.innerText = this.currentGroup.name;
 
                 this.showScreen('listening');
-                this.setupMediaSession(); // Re-init on gesture
-                this.startSilentAudio();
-                this.playListeningStep();
-            }
+                this.setupMediaSession();
 
-            startSilentAudio() {
-                this.log("Audio: play()");
-                this.silentAudio.play().then(() => {
-                    this.log("Audio: playing OK");
-                    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+                this.log("Audio: play request...");
+                this.startSilentAudio().then(() => {
+                    this.log("Audio: Start success");
+                    this.playListeningStep();
                 }).catch(e => {
-                    this.log(`Audio Error: ${e.message}`);
+                    this.log(`Audio: Fatal Error ${e.message}`);
+                    // Still try to play listening step, maybe user unblocks later
+                    this.playListeningStep();
                 });
             }
 
+            async startSilentAudio() {
+                // Ensure audio is loaded
+                this.silentAudio.load();
+                // Wait a tiny bit for iOS to digest the load request
+                await new Promise(r => setTimeout(r, 200));
+
+                try {
+                    await this.silentAudio.play();
+                    this.log("Audio: playing OK");
+                    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+                    return true;
+                } catch (e) {
+                    throw e;
+                }
+            }
+
             stopSilentAudio() {
-                this.log("Audio: pause()");
+                this.log("Audio: stop()");
                 this.silentAudio.pause();
                 this.silentAudio.currentTime = 0;
                 if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
