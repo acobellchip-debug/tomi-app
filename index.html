@@ -378,6 +378,29 @@
                 transform: scale(1.05);
             }
         }
+
+        /* Debug Console */
+        .debug-console {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            color: #0f0;
+            font-family: monospace;
+            font-size: 10px;
+            padding: 5px;
+            z-index: 1000;
+            max-height: 100px;
+            overflow-y: auto;
+            text-align: left;
+            pointer-events: none;
+        }
+
+        .debug-console.visible {
+            display: block;
+        }
     </style>
 </head>
 
@@ -503,11 +526,11 @@
                 <button class="btn-control" onclick="app.handleListeningNext()">次へ ⏭</button>
             </div>
 
-            <div style="margin-top: 20px; font-size: 0.8rem; color: #7f8c8d;">
+            <div style="margin-top: 20px; font-size: 0.8rem; color: #7f8c8d;" onclick="app.toggleDebug()">
                 画面を閉じていても音声を再生します
             </div>
             <!-- Hidden silent audio for background keep-alive -->
-            <audio id="silent-audio" loop style="display:none;"></audio>
+            <audio id="silent-audio" loop playsinline></audio>
         </div>
 
         <!-- 6. Result Screen -->
@@ -520,6 +543,9 @@
             </div>
             <button class="btn btn-large" onclick="app.showGroupDetail()">グループ詳細へ戻る</button>
         </div>
+
+        <div id="debug-console" class="debug-console"></div>
+    </div>
     </div>
 
     <script src="data.js"></script>
@@ -577,40 +603,67 @@
 
                 // Silent Audio setup
                 this.silentAudio = document.getElementById('silent-audio');
-                // Very short silent MP3 (base64)
-                this.silentAudio.src = 'data:audio/mpeg;base64,SUQzBAAAAAABAFRYWFgAAAASAAADbWFqb3JfYnJhbmQAZGFzaABUWFhYAAAAEAAAA21pbm9yX3ZlcnNpb24AMABUWFhYAAAAHAAAA2NvbXBhdGlibGVfYnJhbmRzAGlzbzZtcDQxAFRTU0UAAAAPAAADTGF2ZjYwLjMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';
+                this.silentAudio.style.display = 'none'; // Keep it hidden but in DOM
+
+                // 5 seconds of silence (Low bit rate MP3)
+                this.silentAudio.src = 'data:audio/mpeg;base64,SUQzBAAAAAABAFRYWFgAAAASAAADbWFqb3JfYnJhbmQAZGFzaABUWFhYAAAAEAAAA21pbm9yX3ZlcnNpb24AMABUWFhYAAAAHAAAA2NvbXBhdGlibGVfYnJhbmRzAGlzbzZtcDQxAFRTU0UAAAAPAAADTGF2ZjYwLjMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';
+                this.silentAudio.volume = 0.01; // Not 0, to prevent iOS power saving
+                this.silentAudio.muted = false;
 
                 this.initTopPage();
-                this.setupMediaSession();
+            }
+
+            log(msg) {
+                console.log(msg);
+                const consoleEl = document.getElementById('debug-console');
+                const time = new Date().toLocaleTimeString();
+                consoleEl.innerHTML = `[${time}] ${msg}<br>` + consoleEl.innerHTML;
+            }
+
+            toggleDebug() {
+                document.getElementById('debug-console').classList.toggle('visible');
             }
 
             setupMediaSession() {
                 if ('mediaSession' in navigator) {
-                    navigator.mediaSession.setActionHandler('play', () => this.toggleListeningPause());
-                    navigator.mediaSession.setActionHandler('pause', () => this.toggleListeningPause());
+                    this.log("Setting up MediaSession handlers");
+                    navigator.mediaSession.setActionHandler('play', () => {
+                        this.log("MediaSession: Play");
+                        this.toggleListeningPause();
+                    });
+                    navigator.mediaSession.setActionHandler('pause', () => {
+                        this.log("MediaSession: Pause");
+                        this.toggleListeningPause();
+                    });
                     navigator.mediaSession.setActionHandler('previoustrack', () => {
+                        this.log("MediaSession: Prev");
                         if (document.querySelector('.screen.active').id === 'listening-screen') {
                             this.handleListeningPrev();
                         }
                     });
                     navigator.mediaSession.setActionHandler('nexttrack', () => {
+                        this.log("MediaSession: Next");
                         if (document.querySelector('.screen.active').id === 'listening-screen') {
                             this.handleListeningNext();
                         }
                     });
+                } else {
+                    this.log("MediaSession NOT supported");
                 }
             }
 
             updateMediaMetadata(word) {
                 if ('mediaSession' in navigator) {
+                    this.log(`Update Metadata: ${word.ko}`);
                     navigator.mediaSession.metadata = new MediaMetadata({
                         title: word.ko,
                         artist: word.ja,
                         album: this.currentGroup ? this.currentGroup.name : 'トミ式韓国語',
                         artwork: [
-                            { src: 'https://via.placeholder.com/512?text=' + encodeURIComponent(word.ko), sizes: '512x512', type: 'image/png' }
+                            { src: 'https://via.placeholder.com/512/2c3e50/ffffff?text=' + encodeURIComponent(word.ko), sizes: '512x512', type: 'image/png' }
                         ]
                     });
+                    navigator.mediaSession.playbackState = 'playing';
                 }
             }
 
@@ -900,17 +953,26 @@
                 this.listeningGroupDisplay.innerText = this.currentGroup.name;
 
                 this.showScreen('listening');
+                this.setupMediaSession(); // Re-init on gesture
                 this.startSilentAudio();
                 this.playListeningStep();
             }
 
             startSilentAudio() {
-                this.silentAudio.play().catch(e => console.log("Silent audio failed:", e));
+                this.log("Audio: play()");
+                this.silentAudio.play().then(() => {
+                    this.log("Audio: playing OK");
+                    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+                }).catch(e => {
+                    this.log(`Audio Error: ${e.message}`);
+                });
             }
 
             stopSilentAudio() {
+                this.log("Audio: pause()");
                 this.silentAudio.pause();
                 this.silentAudio.currentTime = 0;
+                if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
             }
 
             playListeningStep() {
@@ -929,12 +991,14 @@
                 this.listeningJapanese.innerText = '';
 
                 this.updateMediaMetadata(word);
+                this.log(`Speak: ${word.ko}`);
                 this.speak(word.ko, 'ko-KR', () => {
                     if (this.isListeningPaused) return;
 
                     // Phase 2: Wait a bit, then Show Japanese & Play Japanese
                     this.listeningTimeout = setTimeout(() => {
                         this.listeningJapanese.innerText = word.ja;
+                        this.log(`Speak: ${word.ja}`);
                         this.speak(word.ja, 'ja-JP', () => {
                             if (this.isListeningPaused) return;
 
@@ -990,6 +1054,7 @@
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = lang;
                 utterance.rate = 1.0;
+                utterance.onerror = (e) => this.log(`Speech Error: ${e.error}`);
                 if (onEnd) {
                     utterance.onend = onEnd;
                 }
