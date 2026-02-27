@@ -506,6 +506,8 @@
             <div style="margin-top: 20px; font-size: 0.8rem; color: #7f8c8d;">
                 画面を閉じていても音声を再生します
             </div>
+            <!-- Hidden silent audio for background keep-alive -->
+            <audio id="silent-audio" loop style="display:none;"></audio>
         </div>
 
         <!-- 6. Result Screen -->
@@ -573,7 +575,43 @@
                 this.isListeningPaused = false;
                 this.listeningTimeout = null;
 
+                // Silent Audio setup
+                this.silentAudio = document.getElementById('silent-audio');
+                // Very short silent MP3 (base64)
+                this.silentAudio.src = 'data:audio/mpeg;base64,SUQzBAAAAAABAFRYWFgAAAASAAADbWFqb3JfYnJhbmQAZGFzaABUWFhYAAAAEAAAA21pbm9yX3ZlcnNpb24AMABUWFhYAAAAHAAAA2NvbXBhdGlibGVfYnJhbmRzAGlzbzZtcDQxAFRTU0UAAAAPAAADTGF2ZjYwLjMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';
+
                 this.initTopPage();
+                this.setupMediaSession();
+            }
+
+            setupMediaSession() {
+                if ('mediaSession' in navigator) {
+                    navigator.mediaSession.setActionHandler('play', () => this.toggleListeningPause());
+                    navigator.mediaSession.setActionHandler('pause', () => this.toggleListeningPause());
+                    navigator.mediaSession.setActionHandler('previoustrack', () => {
+                        if (document.querySelector('.screen.active').id === 'listening-screen') {
+                            this.handleListeningPrev();
+                        }
+                    });
+                    navigator.mediaSession.setActionHandler('nexttrack', () => {
+                        if (document.querySelector('.screen.active').id === 'listening-screen') {
+                            this.handleListeningNext();
+                        }
+                    });
+                }
+            }
+
+            updateMediaMetadata(word) {
+                if ('mediaSession' in navigator) {
+                    navigator.mediaSession.metadata = new MediaMetadata({
+                        title: word.ko,
+                        artist: word.ja,
+                        album: this.currentGroup ? this.currentGroup.name : 'トミ式韓国語',
+                        artwork: [
+                            { src: 'https://via.placeholder.com/512?text=' + encodeURIComponent(word.ko), sizes: '512x512', type: 'image/png' }
+                        ]
+                    });
+                }
             }
 
             // --- Audio Logic ---
@@ -619,9 +657,9 @@
                     this.showScreen('top');
                 } else if (activeScreen === 'practice-screen' || activeScreen === 'training-screen' || activeScreen === 'listening-screen' || activeScreen === 'result-screen') {
                     // Stop any timers/audio
-                    if (this.timer) clearTimeout(this.timer);
                     if (this.listeningTimeout) clearTimeout(this.listeningTimeout);
                     this.speechSynth.cancel();
+                    this.stopSilentAudio();
                     this._detachPracticeKeys();
                     this._detachTestKeys();
                     this.showGroupDetail();
@@ -862,7 +900,17 @@
                 this.listeningGroupDisplay.innerText = this.currentGroup.name;
 
                 this.showScreen('listening');
+                this.startSilentAudio();
                 this.playListeningStep();
+            }
+
+            startSilentAudio() {
+                this.silentAudio.play().catch(e => console.log("Silent audio failed:", e));
+            }
+
+            stopSilentAudio() {
+                this.silentAudio.pause();
+                this.silentAudio.currentTime = 0;
             }
 
             playListeningStep() {
@@ -877,10 +925,10 @@
                 const total = this.listeningWords.length;
                 this.listeningCounter.innerText = `${this.listeningIndex + 1} / ${total}`;
 
-                // Phase 1: Show Korean & Play Korean
                 this.listeningKorean.innerText = word.ko;
                 this.listeningJapanese.innerText = '';
 
+                this.updateMediaMetadata(word);
                 this.speak(word.ko, 'ko-KR', () => {
                     if (this.isListeningPaused) return;
 
@@ -908,7 +956,9 @@
                 if (this.isListeningPaused) {
                     if (this.listeningTimeout) clearTimeout(this.listeningTimeout);
                     this.speechSynth.cancel();
+                    this.stopSilentAudio();
                 } else {
+                    this.startSilentAudio();
                     this.playListeningStep();
                 }
             }
