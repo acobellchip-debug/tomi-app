@@ -3,9 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>トミ式・初級韓国語1秒暗記トレーニング</title>
     <style>
         :root {
@@ -380,29 +378,6 @@
                 transform: scale(1.05);
             }
         }
-
-        /* Debug Console */
-        .debug-console {
-            display: none;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            color: #0f0;
-            font-family: monospace;
-            font-size: 10px;
-            padding: 5px;
-            z-index: 1000;
-            max-height: 100px;
-            overflow-y: auto;
-            text-align: left;
-            pointer-events: none;
-        }
-
-        .debug-console.visible {
-            display: block;
-        }
     </style>
 </head>
 
@@ -528,11 +503,9 @@
                 <button class="btn-control" onclick="app.handleListeningNext()">次へ ⏭</button>
             </div>
 
-            <div style="margin-top: 20px; font-size: 0.8rem; color: #7f8c8d;" onclick="app.toggleDebug()">
+            <div style="margin-top: 20px; font-size: 0.8rem; color: #7f8c8d;">
                 画面を閉じていても音声を再生します
             </div>
-            <!-- Hidden silent audio for background keep-alive -->
-            <audio id="silent-audio" loop playsinline></audio>
         </div>
 
         <!-- 6. Result Screen -->
@@ -545,9 +518,6 @@
             </div>
             <button class="btn btn-large" onclick="app.showGroupDetail()">グループ詳細へ戻る</button>
         </div>
-
-        <div id="debug-console" class="debug-console"></div>
-    </div>
     </div>
 
     <script src="data.js"></script>
@@ -603,82 +573,7 @@
                 this.isListeningPaused = false;
                 this.listeningTimeout = null;
 
-                // Silent Audio setup
-                this.silentAudio = document.getElementById('silent-audio');
-                this.silentAudio.style.display = 'none'; // Keep it hidden but in DOM
-
-                // 5 seconds of silence (Low bit rate MP3)
-                const silentB64 = 'SUQzBAAAAAABAFRYWFgAAAASAAADbWFqb3JfYnJhbmQAZGFzaABUWFhYAAAAEAAAA21pbm9yX3ZlcnNpb24AMABUWFhYAAAAHAAAA2NvbXBhdGlibGVfYnJhbmRzAGlzbzZtcDQxAFRTU0UAAAAPAAADTGF2ZjYwLjMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';
-                const audioBlob = this.base64ToBlob(silentB64, 'audio/mpeg');
-                this.silentAudio.src = URL.createObjectURL(audioBlob);
-                this.silentAudio.volume = 0.05;
-                this.silentAudio.muted = false;
-
                 this.initTopPage();
-            }
-
-            base64ToBlob(base64, contentType) {
-                const raw = window.atob(base64);
-                const rawLength = raw.length;
-                const uInt8Array = new Uint8Array(rawLength);
-                for (let i = 0; i < rawLength; ++i) {
-                    uInt8Array[i] = raw.charCodeAt(i);
-                }
-                return new Blob([uInt8Array], { type: contentType });
-            }
-
-            log(msg) {
-                console.log(msg);
-                const consoleEl = document.getElementById('debug-console');
-                const time = new Date().toLocaleTimeString();
-                consoleEl.innerHTML = `[${time}] ${msg}<br>` + consoleEl.innerHTML;
-            }
-
-            toggleDebug() {
-                document.getElementById('debug-console').classList.toggle('visible');
-            }
-
-            setupMediaSession() {
-                if ('mediaSession' in navigator) {
-                    this.log("Setting up MediaSession handlers");
-                    navigator.mediaSession.setActionHandler('play', () => {
-                        this.log("MediaSession: Play");
-                        this.toggleListeningPause();
-                    });
-                    navigator.mediaSession.setActionHandler('pause', () => {
-                        this.log("MediaSession: Pause");
-                        this.toggleListeningPause();
-                    });
-                    navigator.mediaSession.setActionHandler('previoustrack', () => {
-                        this.log("MediaSession: Prev");
-                        if (document.querySelector('.screen.active').id === 'listening-screen') {
-                            this.handleListeningPrev();
-                        }
-                    });
-                    navigator.mediaSession.setActionHandler('nexttrack', () => {
-                        this.log("MediaSession: Next");
-                        if (document.querySelector('.screen.active').id === 'listening-screen') {
-                            this.handleListeningNext();
-                        }
-                    });
-                } else {
-                    this.log("MediaSession NOT supported");
-                }
-            }
-
-            updateMediaMetadata(word) {
-                if ('mediaSession' in navigator) {
-                    this.log(`Update Metadata: ${word.ko}`);
-                    navigator.mediaSession.metadata = new MediaMetadata({
-                        title: word.ko,
-                        artist: word.ja,
-                        album: this.currentGroup ? this.currentGroup.name : 'トミ式韓国語',
-                        artwork: [
-                            { src: 'https://via.placeholder.com/512/2c3e50/ffffff?text=' + encodeURIComponent(word.ko), sizes: '512x512', type: 'image/png' }
-                        ]
-                    });
-                    navigator.mediaSession.playbackState = 'playing';
-                }
             }
 
             // --- Audio Logic ---
@@ -724,9 +619,9 @@
                     this.showScreen('top');
                 } else if (activeScreen === 'practice-screen' || activeScreen === 'training-screen' || activeScreen === 'listening-screen' || activeScreen === 'result-screen') {
                     // Stop any timers/audio
+                    if (this.timer) clearTimeout(this.timer);
                     if (this.listeningTimeout) clearTimeout(this.listeningTimeout);
                     this.speechSynth.cancel();
-                    this.stopSilentAudio();
                     this._detachPracticeKeys();
                     this._detachTestKeys();
                     this.showGroupDetail();
@@ -967,40 +862,7 @@
                 this.listeningGroupDisplay.innerText = this.currentGroup.name;
 
                 this.showScreen('listening');
-                this.setupMediaSession();
-
-                this.log("Audio: play request...");
-                this.startSilentAudio().then(() => {
-                    this.log("Audio: Start success");
-                    this.playListeningStep();
-                }).catch(e => {
-                    this.log(`Audio: Fatal Error ${e.message}`);
-                    // Still try to play listening step, maybe user unblocks later
-                    this.playListeningStep();
-                });
-            }
-
-            async startSilentAudio() {
-                // Ensure audio is loaded
-                this.silentAudio.load();
-                // Wait a tiny bit for iOS to digest the load request
-                await new Promise(r => setTimeout(r, 200));
-
-                try {
-                    await this.silentAudio.play();
-                    this.log("Audio: playing OK");
-                    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
-                    return true;
-                } catch (e) {
-                    throw e;
-                }
-            }
-
-            stopSilentAudio() {
-                this.log("Audio: stop()");
-                this.silentAudio.pause();
-                this.silentAudio.currentTime = 0;
-                if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+                this.playListeningStep();
             }
 
             playListeningStep() {
@@ -1015,18 +877,16 @@
                 const total = this.listeningWords.length;
                 this.listeningCounter.innerText = `${this.listeningIndex + 1} / ${total}`;
 
+                // Phase 1: Show Korean & Play Korean
                 this.listeningKorean.innerText = word.ko;
                 this.listeningJapanese.innerText = '';
 
-                this.updateMediaMetadata(word);
-                this.log(`Speak: ${word.ko}`);
                 this.speak(word.ko, 'ko-KR', () => {
                     if (this.isListeningPaused) return;
 
                     // Phase 2: Wait a bit, then Show Japanese & Play Japanese
                     this.listeningTimeout = setTimeout(() => {
                         this.listeningJapanese.innerText = word.ja;
-                        this.log(`Speak: ${word.ja}`);
                         this.speak(word.ja, 'ja-JP', () => {
                             if (this.isListeningPaused) return;
 
@@ -1048,9 +908,7 @@
                 if (this.isListeningPaused) {
                     if (this.listeningTimeout) clearTimeout(this.listeningTimeout);
                     this.speechSynth.cancel();
-                    this.stopSilentAudio();
                 } else {
-                    this.startSilentAudio();
                     this.playListeningStep();
                 }
             }
@@ -1082,7 +940,6 @@
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = lang;
                 utterance.rate = 1.0;
-                utterance.onerror = (e) => this.log(`Speech Error: ${e.error}`);
                 if (onEnd) {
                     utterance.onend = onEnd;
                 }
